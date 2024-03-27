@@ -10,8 +10,6 @@
 
 ## Usage
 
-`cd demo-atm-fraud`
-
 ### Build containers using jib
 
 ```shell
