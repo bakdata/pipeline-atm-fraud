@@ -1,4 +1,4 @@
-# Demo Pipeline: ATM fraud detection with streams-bootstrap
+# Kafka demo pipeline: ATM fraud detection with streams-bootstrap
 
 ![demo-pipeline](https://github.com/bakdata/streams-explorer/blob/main/screens/demo-pipeline.png?raw=true)
 
