@@ -1,0 +1,13 @@
+# Ignore dynaconf secret files
+.secrets.*
+*private*
+
+build
+.gradle
+
+# Generic
+.DS_Store
+
+# IDE
+.idea
+.vscode
