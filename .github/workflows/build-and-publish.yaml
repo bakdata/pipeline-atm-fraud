@@ -32,12 +32,30 @@ jobs:
       sonar-organization: ${{ secrets.SONARCLOUD_ORGANIZATION }}
 
   build-jib:
-    name: Build images
+    name: Build ${{ matrix.app.name }} image
     runs-on: ubuntu-22.04
     defaults:
       run:
         working-directory: ${{ env.working-directory }}
     needs: build-and-test
+    strategy:
+      matrix:
+        app:
+          - name: transaction-avro-producer
+            image: bakdata/atm-demo-transactionavroproducer
+            class: com.bakdata.kafka.TransactionAvroProducer
+          - name: account-producer
+            image: bakdata/atm-demo-accountproducer
+            class: com.bakdata.kafka.AccountProducer
+          - name: transaction-joiner
+            image: bakdata/atm-demo-transactionjoiner
+            class: com.bakdata.kafka.TransactionJoiner
+          - name: fraud-detector
+            image: bakdata/atm-demo-frauddetector
+            class: com.bakdata.kafka.FraudDetector
+          - name: account-linker
+            image: bakdata/atm-demo-accountlinker
+            class: com.bakdata.kafka.AccountLinker
 
     steps:
       - name: Login into docker
@@ -46,59 +64,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push transaction avro producer image
+      - name: Build and push ${{ matrix.app.name }} image
         uses: bakdata/ci-templates/actions/java-gradle-build-jib@1.50.4
         with:
-          full-image-name: bakdata/atm-demo-transactionavroproducer
-          class: com.bakdata.kafka.TransactionAvroProducer
-          java-version: ${{ env.java-version }}
-          gradle-version: ${{ env.gradle-version }}
-          gradle-cache: ${{ env.gradle-cache }}
-          gradle-cache-read-only: ${{ env.gradle-cache-read-only }}
-          gradle-refresh-dependencies: ${{ env.gradle-refresh-dependencies }}
-          working-directory: ${{ env.working-directory }}
-
-      - name: Build and push account producer image
-        uses: bakdata/ci-templates/actions/java-gradle-build-jib@1.50.4
-        with:
-          full-image-name: bakdata/atm-demo-accountproducer
-          class: com.bakdata.kafka.AccountProducer
-          java-version: ${{ env.java-version }}
-          gradle-version: ${{ env.gradle-version }}
-          gradle-cache: ${{ env.gradle-cache }}
-          gradle-cache-read-only: ${{ env.gradle-cache-read-only }}
-          gradle-refresh-dependencies: ${{ env.gradle-refresh-dependencies }}
-          working-directory: ${{ env.working-directory }}
-
-      - name: Build and push transaction joiner image
-        uses: bakdata/ci-templates/actions/java-gradle-build-jib@1.50.4
-        with:
-          full-image-name: bakdata/atm-demo-transactionjoiner
-          class: com.bakdata.kafka.TransactionJoiner
-          java-version: ${{ env.java-version }}
-          gradle-version: ${{ env.gradle-version }}
-          gradle-cache: ${{ env.gradle-cache }}
-          gradle-cache-read-only: ${{ env.gradle-cache-read-only }}
-          gradle-refresh-dependencies: ${{ env.gradle-refresh-dependencies }}
-          working-directory: ${{ env.working-directory }}
-
-      - name: Build and push fraud detector image
-        uses: bakdata/ci-templates/actions/java-gradle-build-jib@1.50.4
-        with:
-          full-image-name: bakdata/atm-demo-frauddetector
-          class: com.bakdata.kafka.FraudDetector
-          java-version: ${{ env.java-version }}
-          gradle-version: ${{ env.gradle-version }}
-          gradle-cache: ${{ env.gradle-cache }}
-          gradle-cache-read-only: ${{ env.gradle-cache-read-only }}
-          gradle-refresh-dependencies: ${{ env.gradle-refresh-dependencies }}
-          working-directory: ${{ env.working-directory }}
-
-      - name: Build and push account linker image
-        uses: bakdata/ci-templates/actions/java-gradle-build-jib@1.50.4
-        with:
-          full-image-name: bakdata/atm-demo-accountlinker
-          class: com.bakdata.kafka.AccountLinker
+          full-image-name: ${{ matrix.app.image }}
+          class: ${{ matrix.app.class }}
           java-version: ${{ env.java-version }}
           gradle-version: ${{ env.gradle-version }}
           gradle-cache: ${{ env.gradle-cache }}
