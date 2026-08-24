@@ -18,8 +18,8 @@ jobs:
     name: Java Gradle Release
     uses: bakdata/ci-templates/.github/workflows/java-gradle-release.yaml@1.50.4
     with:
-      java-version: 11
-      gradle-version: 7.1.1
+      java-version: 21
+      gradle-version: 8.4
       release-type: "${{ inputs.release-type }}"
       working-directory: "."
     secrets:

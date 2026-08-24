@@ -6,8 +6,8 @@ on:
     branches: ["**"]
 
 env:
-  java-version: 11
-  gradle-version: 7.1.1
+  java-version: 21
+  gradle-version: 8.4
   gradle-cache: true
   gradle-cache-read-only: true
   gradle-refresh-dependencies: false
@@ -18,8 +18,8 @@ jobs:
     name: Build, Test and Assess code quality
     uses: bakdata/ci-templates/.github/workflows/java-gradle-base.yaml@1.50.4
     with:
-      java-version: 11
-      gradle-version: 7.1.1
+      java-version: 21
+      gradle-version: 8.4
       gradle-cache: true
       gradle-cache-read-only: false
       gradle-refresh-dependencies: false
