@@ -2,7 +2,7 @@ nameOverride: atm-fraud-transactionjoiner
 
 replicaCount: 1
 
-image: url-to-container-registry.com/streams-explorer-demo-transactionjoiner
+image: bakdata/atm-demo-transactionjoiner
 imageTag: latest
 
 streams:

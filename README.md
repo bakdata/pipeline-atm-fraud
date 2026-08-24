@@ -13,11 +13,11 @@
 ### Build containers using jib
 
 ```shell
-gradle jib -Djib.to.image=url-to-container-registry.com/streams-explorer-demo-transactionavroproducer -Djib.container.mainClass=com.bakdata.kafka.TransactionAvroProducer
-gradle jib -Djib.to.image=url-to-container-registry.com/streams-explorer-demo-accountproducer -Djib.container.mainClass=com.bakdata.kafka.AccountProducer
-gradle jib -Djib.to.image=url-to-container-registry.com/streams-explorer-demo-transactionjoiner -Djib.container.mainClass=com.bakdata.kafka.TransactionJoiner
-gradle jib -Djib.to.image=url-to-container-registry.com/streams-explorer-demo-frauddetector -Djib.container.mainClass=com.bakdata.kafka.FraudDetector
-gradle jib -Djib.to.image=url-to-container-registry.com/streams-explorer-demo-accountlinker -Djib.container.mainClass=com.bakdata.kafka.AccountLinker
+gradle jib -Djib.to.image=bakdata/atm-demo-transactionavroproducer -Djib.container.mainClass=com.bakdata.kafka.TransactionAvroProducer
+gradle jib -Djib.to.image=bakdata/atm-demo-accountproducer -Djib.container.mainClass=com.bakdata.kafka.AccountProducer
+gradle jib -Djib.to.image=bakdata/atm-demo-transactionjoiner -Djib.container.mainClass=com.bakdata.kafka.TransactionJoiner
+gradle jib -Djib.to.image=bakdata/atm-demo-frauddetector -Djib.container.mainClass=com.bakdata.kafka.FraudDetector
+gradle jib -Djib.to.image=bakdata/atm-demo-accountlinker -Djib.container.mainClass=com.bakdata.kafka.AccountLinker
 ```
 
 ### Deploy in Kubernetes

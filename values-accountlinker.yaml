@@ -2,7 +2,7 @@ nameOverride: atm-fraud-accountlinker
 
 replicaCount: 1
 
-image: url-to-container-registry.com/streams-explorer-demo-accountlinker
+image: bakdata/atm-demo-accountlinker
 imageTag: latest
 
 streams:

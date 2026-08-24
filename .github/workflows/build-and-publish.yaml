@@ -1,0 +1,125 @@
+name: Build and Publish
+
+on:
+  push:
+    tags: ["**"]
+    branches: ["**"]
+
+env:
+  java-version: 11
+  gradle-version: 7.1.1
+  gradle-cache: true
+  gradle-cache-read-only: true
+  gradle-refresh-dependencies: false
+  working-directory: "."
+
+jobs:
+  build-and-test:
+    name: Build, Test and Assess code quality
+    uses: bakdata/ci-templates/.github/workflows/java-gradle-base.yaml@1.50.4
+    with:
+      java-version: 11
+      gradle-version: 7.1.1
+      gradle-cache: true
+      gradle-cache-read-only: false
+      gradle-refresh-dependencies: false
+      working-directory: "."
+    secrets:
+      signing-key-id: ${{ secrets.SONATYPE_SIGNING_KEY_ID }}
+      signing-password: ${{ secrets.SONATYPE_SIGNING_PASSWORD }}
+      signing-secret-key-ring: ${{ secrets.SONATYPE_SIGNING_SECRET_KEY_RING }}
+      sonar-token: ${{ secrets.SONARCLOUD_TOKEN }}
+      sonar-organization: ${{ secrets.SONARCLOUD_ORGANIZATION }}
+
+  build-jib:
+    name: Build images
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ${{ env.working-directory }}
+    needs: build-and-test
+
+    steps:
+      - name: Login into docker
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push transaction avro producer image
+        uses: bakdata/ci-templates/actions/java-gradle-build-jib@1.50.4
+        with:
+          full-image-name: bakdata/atm-demo-transactionavroproducer
+          class: com.bakdata.kafka.TransactionAvroProducer
+          java-version: ${{ env.java-version }}
+          gradle-version: ${{ env.gradle-version }}
+          gradle-cache: ${{ env.gradle-cache }}
+          gradle-cache-read-only: ${{ env.gradle-cache-read-only }}
+          gradle-refresh-dependencies: ${{ env.gradle-refresh-dependencies }}
+          working-directory: ${{ env.working-directory }}
+
+      - name: Build and push account producer image
+        uses: bakdata/ci-templates/actions/java-gradle-build-jib@1.50.4
+        with:
+          full-image-name: bakdata/atm-demo-accountproducer
+          class: com.bakdata.kafka.AccountProducer
+          java-version: ${{ env.java-version }}
+          gradle-version: ${{ env.gradle-version }}
+          gradle-cache: ${{ env.gradle-cache }}
+          gradle-cache-read-only: ${{ env.gradle-cache-read-only }}
+          gradle-refresh-dependencies: ${{ env.gradle-refresh-dependencies }}
+          working-directory: ${{ env.working-directory }}
+
+      - name: Build and push transaction joiner image
+        uses: bakdata/ci-templates/actions/java-gradle-build-jib@1.50.4
+        with:
+          full-image-name: bakdata/atm-demo-transactionjoiner
+          class: com.bakdata.kafka.TransactionJoiner
+          java-version: ${{ env.java-version }}
+          gradle-version: ${{ env.gradle-version }}
+          gradle-cache: ${{ env.gradle-cache }}
+          gradle-cache-read-only: ${{ env.gradle-cache-read-only }}
+          gradle-refresh-dependencies: ${{ env.gradle-refresh-dependencies }}
+          working-directory: ${{ env.working-directory }}
+
+      - name: Build and push fraud detector image
+        uses: bakdata/ci-templates/actions/java-gradle-build-jib@1.50.4
+        with:
+          full-image-name: bakdata/atm-demo-frauddetector
+          class: com.bakdata.kafka.FraudDetector
+          java-version: ${{ env.java-version }}
+          gradle-version: ${{ env.gradle-version }}
+          gradle-cache: ${{ env.gradle-cache }}
+          gradle-cache-read-only: ${{ env.gradle-cache-read-only }}
+          gradle-refresh-dependencies: ${{ env.gradle-refresh-dependencies }}
+          working-directory: ${{ env.working-directory }}
+
+      - name: Build and push account linker image
+        uses: bakdata/ci-templates/actions/java-gradle-build-jib@1.50.4
+        with:
+          full-image-name: bakdata/atm-demo-accountlinker
+          class: com.bakdata.kafka.AccountLinker
+          java-version: ${{ env.java-version }}
+          gradle-version: ${{ env.gradle-version }}
+          gradle-cache: ${{ env.gradle-cache }}
+          gradle-cache-read-only: ${{ env.gradle-cache-read-only }}
+          gradle-refresh-dependencies: ${{ env.gradle-refresh-dependencies }}
+          working-directory: ${{ env.working-directory }}
+
+  release:
+    name: Create Github release
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-22.04
+    needs: [build-and-test, build-jib]
+
+    steps:
+      - name: Release on Github
+        uses: bakdata/ci-templates/actions/java-gradle-release-github@1.50.4
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          java-version: ${{ env.java-version }}
+          gradle-version: ${{ env.gradle-version }}
+          gradle-cache: ${{ env.gradle-cache }}
+          gradle-cache-read-only: ${{ env.gradle-cache-read-only }}
+          gradle-refresh-dependencies: ${{ env.gradle-refresh-dependencies }}
+          working-directory: ${{ env.working-directory }}
