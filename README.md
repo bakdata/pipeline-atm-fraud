@@ -25,11 +25,11 @@ gradle jib -Djib.to.image=bakdata/atm-demo-accountlinker -Djib.container.mainCla
 ```shell
 helm repo add bakdata-common https://raw.githubusercontent.com/bakdata/streams-bootstrap/master/charts/
 helm repo update
-helm upgrade --debug --install --force --values values-transactionavroproducer.yaml demo-transactionavroproducer bakdata-common/streams-app
-helm upgrade --debug --install --force --values values-accountproducer.yaml demo-accountproducer bakdata-common/streams-app
-helm upgrade --debug --install --force --values values-transactionjoiner.yaml demo-transactionjoiner bakdata-common/streams-app
-helm upgrade --debug --install --force --values values-frauddetector.yaml demo-frauddetector bakdata-common/streams-app
-helm upgrade --debug --install --force --values values-accountlinker.yaml demo-accountlinker bakdata-common/streams-app
+helm upgrade --debug --install --force --values deployment/values-transactionavroproducer.yaml demo-transactionavroproducer bakdata-common/streams-app
+helm upgrade --debug --install --force --values deployment/values-accountproducer.yaml demo-accountproducer bakdata-common/streams-app
+helm upgrade --debug --install --force --values deployment/values-transactionjoiner.yaml demo-transactionjoiner bakdata-common/streams-app
+helm upgrade --debug --install --force --values deployment/values-frauddetector.yaml demo-frauddetector bakdata-common/streams-app
+helm upgrade --debug --install --force --values deployment/values-accountlinker.yaml demo-accountlinker bakdata-common/streams-app
 ```
 
 ### Generate test accounts
