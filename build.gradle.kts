@@ -5,8 +5,8 @@ plugins {
     id("com.bakdata.release") version "1.4.1"
     id("com.bakdata.sonar") version "1.4.1"
     id("com.bakdata.sonatype") version "1.4.1"
+    id("com.bakdata.jib") version "1.4.1"
     id("io.freefair.lombok") version "8.11"
-    id("com.google.cloud.tools.jib") version "3.4.4"
     id("com.github.davidmc24.gradle.plugin.avro") version "1.9.0"
 }
 
