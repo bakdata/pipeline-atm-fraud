@@ -46,38 +46,39 @@ tasks {
 }
 
 dependencies {
-    implementation(group = "com.bakdata.seq2", name = "seq2", version = "1.0.0")
-    val confluentVersion: String by project
+    val streamsBootstrapVersion = "3.1.0"
+    implementation(group = "com.bakdata.kafka", name = "streams-bootstrap-cli", version = streamsBootstrapVersion)
+    val confluentVersion = "7.6.0"
     implementation(group = "io.confluent", name = "kafka-streams-avro-serde", version = confluentVersion)
-    implementation(group = "com.bakdata.kafka", name = "streams-bootstrap", version = "2.3.0")
-    implementation(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.3.0")
-    implementation(group = "org.elasticsearch", name = "elasticsearch", version = "7.10.0")
-    implementation(group = "org.slf4j", name = "slf4j-log4j12", version = "1.7.26")
-    implementation(group = "org.json", name = "json", version = "20201115")
+    val log4jVersion = "2.24.2"
+    implementation(group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl", version = log4jVersion)
+    implementation(group = "org.elasticsearch", name = "elasticsearch", version = "7.17.26")
+    implementation(group = "com.opencsv", name = "opencsv", version = "5.9")
+    implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = "2.18.2")
 
-    val junitVersion: String by project
+    val junitVersion = "5.11.3"
     testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = junitVersion)
     testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-params", version = junitVersion)
     testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = junitVersion)
-    testImplementation(group = "org.assertj", name = "assertj-core", version = "3.23.1")
-    testImplementation(group = "log4j", name = "log4j", version = "1.2.17")
-    val kafkaVersion: String by project
-    val fluentKafkaVersion = "2.7.0"
+    val assertJVersion = "3.26.3"
+    testImplementation(group = "org.assertj", name = "assertj-core", version = assertJVersion)
+
+    testImplementation(group = "com.bakdata.kafka", name = "streams-bootstrap-test", version = streamsBootstrapVersion)
+    val fluentKafkaVersion = "2.14.0"
     testImplementation(
         group = "com.bakdata.fluent-kafka-streams-tests",
         name = "fluent-kafka-streams-tests-junit5",
         version = fluentKafkaVersion
     )
-    testImplementation(group = "net.mguenther.kafka", name = "kafka-junit", version = kafkaVersion) {
-        exclude(group = "org.slf4j", module = "slf4j-log4j12")
-    }
-    implementation(group = "com.opencsv", name = "opencsv", version = "5.2")
     testImplementation(
         group = "com.bakdata.fluent-kafka-streams-tests",
         name = "schema-registry-mock-junit5",
         version = fluentKafkaVersion
     )
-    implementation(group = "info.picocli", name = "picocli", version = "4.6.1")
+    val kafkaJunitVersion = "3.6.0"
+    testImplementation(group = "net.mguenther.kafka", name = "kafka-junit", version = kafkaJunitVersion) {
+        exclude(group = "org.slf4j", module = "slf4j-log4j12")
+    }
 }
 
 jibImage {

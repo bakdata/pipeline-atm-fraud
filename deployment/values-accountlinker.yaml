@@ -5,12 +5,14 @@ replicaCount: 1
 image: bakdata/atm-demo-accountlinker
 imageTag: latest
 
-streams:
-  brokers: "kafka://my-confluent-cp-kafka-headless:9092"
+kafka:
+  bootstrapServers: "kafka://my-confluent-cp-kafka-headless:9092"
   schemaRegistryUrl: "http://my-confluent-cp-schema-registry:8081"
-  inputTopics: atm-fraud-possiblefraudtransactions-topic
-  extraInputTopics:
-    accounts: atm-fraud-accounts-topic
+  inputTopics:
+    - atm-fraud-possiblefraudtransactions-topic
+  labeledInputTopics:
+    accounts:
+      - atm-fraud-accounts-topic
   outputTopic: atm-fraud-output-topic
   errorTopic: atm-fraud-accountlinker-error-topic
 
@@ -20,5 +22,3 @@ annotations:
 prometheus:
   jmx:
     enabled: false
-
-debug: true

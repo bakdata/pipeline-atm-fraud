@@ -1,15 +1,16 @@
 package com.bakdata.kafka;
 
-import java.util.Properties;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
+import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.streams.kstream.KStream;
 
-public class FraudDetector extends KafkaStreamsApplication {
+public class FraudDetector implements StreamsApp {
 
   public static void main(final String[] args) {
-    startApplication(new FraudDetector(), args);
+    KafkaApplication.startApplication(
+        new SimpleKafkaStreamsApplication<>(FraudDetector::new),
+        args
+    );
   }
 
   private static boolean isPotentiallyFraudulentTransaction(final String k, final JoinedTransaction joinedTransaction) {
@@ -24,24 +25,22 @@ public class FraudDetector extends KafkaStreamsApplication {
   }
 
   @Override
-  public void buildTopology(final StreamsBuilder builder) {
-    final KStream<String, JoinedTransaction> inputKStream = builder.stream(this.getInputTopics());
+  public void buildTopology(final TopologyBuilder builder) {
+    final KStream<String, JoinedTransaction> inputKStream = builder.streamInput();
 
     final KStream<String, JoinedTransaction> possibleFraudTransactions = inputKStream
         .filter(FraudDetector::isPotentiallyFraudulentTransaction);
 
-    possibleFraudTransactions.to(this.getOutputTopic());
+    possibleFraudTransactions.to(builder.getTopics().getOutputTopic());
   }
 
   @Override
-  public String getUniqueAppId() {
-    return "streams-explorer-frauddetector-" + this.getOutputTopic();
+  public String getUniqueAppId(final StreamsTopicConfig topics) {
+    return "streams-explorer-frauddetector-" + topics.getOutputTopic();
   }
 
   @Override
-  protected Properties createKafkaProperties() {
-    final Properties kafkaProperties = super.createKafkaProperties();
-    kafkaProperties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.StringSerde.class);
-    return kafkaProperties;
+  public SerdeConfig defaultSerializationConfig() {
+    return new SerdeConfig(StringSerde.class, SpecificAvroSerde.class);
   }
 }

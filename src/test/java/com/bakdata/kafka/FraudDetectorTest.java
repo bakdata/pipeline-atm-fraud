@@ -2,57 +2,60 @@ package com.bakdata.kafka;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.bakdata.fluent_kafka_streams_tests.TestTopology;
-import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
+import com.bakdata.fluent_kafka_streams_tests.junit5.TestTopologyExtension;
 import java.util.List;
 import java.util.Map;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.jooq.lambda.Seq;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 class FraudDetectorTest {
 
   private static final String INPUT_TOPIC = "INPUT";
   private static final String OUTPUT_TOPIC = "OUTPUT";
-  private final FraudDetector fraudDetector = createApp();
-  private TestTopology<String, JoinedTransaction> topology = null;
+  private final ConfiguredStreamsApp<FraudDetector> app = createApp();
 
-  private static FraudDetector createApp() {
-    final FraudDetector fraudDetector = new FraudDetector();
-    fraudDetector.setInputTopics(List.of(INPUT_TOPIC));
-    fraudDetector.setOutputTopic(OUTPUT_TOPIC);
-    return fraudDetector;
+  @RegisterExtension
+  final TestTopologyExtension<String, JoinedTransaction> testTopology =
+      TestTopologyFactory.createTopologyExtensionWithSchemaRegistry(this.app);
+
+  private static ConfiguredStreamsApp<FraudDetector> createApp() {
+    final StreamsTopicConfig topicConfig = StreamsTopicConfig.builder()
+        .inputTopics(List.of(INPUT_TOPIC))
+        .outputTopic(OUTPUT_TOPIC)
+        .build();
+    final AppConfiguration<StreamsTopicConfig> appConfig = new AppConfiguration<>(topicConfig);
+    return new ConfiguredStreamsApp<>(new FraudDetector(), appConfig);
   }
 
   @AfterEach
   void tearDown() {
-    if (this.topology != null) {
-      this.topology.stop();
-    }
+    this.app.close();
   }
 
   @Test
   void shouldFindFraudulent() {
-    this.start();
+    final Map<String, Transaction> transactions = TransactionBuilder.buildTestTransactionsMap();
 
-    Map<String, Transaction> transactions = TransactionBuilder.buildTestTransactionsMap();
-
-    JoinedTransaction genuineJoinedTransaction = JoinedTransaction
+    final JoinedTransaction genuineJoinedTransaction = JoinedTransaction
         .newBuilder()
         .setTransaction1(transactions.get("03"))
         .setTransaction2(transactions.get("02"))
         .build();
-    this.topology.input().add("", genuineJoinedTransaction);
+    this.testTopology.input().add("", genuineJoinedTransaction);
 
-    JoinedTransaction fraudulentJoinedTransaction = JoinedTransaction
+    final JoinedTransaction fraudulentJoinedTransaction = JoinedTransaction
         .newBuilder()
         .setTransaction1(transactions.get("X05"))
         .setTransaction2(transactions.get("02"))
         .build();
-    this.topology.input().add("", fraudulentJoinedTransaction);
+    this.testTopology.input().add("", fraudulentJoinedTransaction);
 
-    final List<ProducerRecord<String, JoinedTransaction>> output = getOutput();
+    final List<ProducerRecord<String, JoinedTransaction>> output = this.testTopology
+        .streamOutput(this.app.getTopics().getOutputTopic())
+        .withValueType(JoinedTransaction.class)
+        .toList();
 
     assertThat(output)
         .hasSize(1)
@@ -64,19 +67,5 @@ class FraudDetectorTest {
                     .setTransaction2(transactions.get("02"))
                     .build()
             ));
-  }
-
-  private void start() {
-    this.topology = new TestTopology<>(p -> {
-      this.fraudDetector.setSchemaRegistryUrl(p.getProperty(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG));
-      return this.fraudDetector.createTopology();
-    }, this.fraudDetector.getKafkaProperties());
-    this.topology.start();
-  }
-
-  private List<ProducerRecord<String, JoinedTransaction>> getOutput() {
-    return Seq.seq(this.topology.streamOutput(this.fraudDetector.getOutputTopic())
-        .withValueType(JoinedTransaction.class))
-        .toList();
   }
 }

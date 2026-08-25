@@ -5,8 +5,8 @@ replicaCount: 1
 image: bakdata/atm-demo-frauddetector
 imageTag: latest
 
-streams:
-  brokers: "kafka://my-confluent-cp-kafka-headless:9092"
+kafka:
+  bootstrapServers: "kafka://my-confluent-cp-kafka-headless:9092"
   schemaRegistryUrl: "http://my-confluent-cp-schema-registry:8081"
   inputTopics:
     - atm-fraud-joinedtransactions-topic
@@ -19,5 +19,3 @@ annotations:
 prometheus:
   jmx:
     enabled: false
-
-debug: true

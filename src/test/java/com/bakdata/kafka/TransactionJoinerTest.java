@@ -2,48 +2,51 @@ package com.bakdata.kafka;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.bakdata.fluent_kafka_streams_tests.TestTopology;
-import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
+import com.bakdata.fluent_kafka_streams_tests.junit5.TestTopologyExtension;
 import java.util.List;
 import java.util.Map;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.jooq.lambda.Seq;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 class TransactionJoinerTest {
 
   private static final String INPUT_TOPIC = "INPUT";
   private static final String OUTPUT_TOPIC = "OUTPUT";
-  private final TransactionJoiner transactionJoiner = createApp();
-  private TestTopology<String, Transaction> topology = null;
+  private final ConfiguredStreamsApp<TransactionJoiner> app = createApp();
 
-  private static TransactionJoiner createApp() {
-    final TransactionJoiner transactionJoiner = new TransactionJoiner();
-    transactionJoiner.setInputTopics(List.of(INPUT_TOPIC));
-    transactionJoiner.setOutputTopic(OUTPUT_TOPIC);
-    return transactionJoiner;
+  @RegisterExtension
+  final TestTopologyExtension<String, Transaction> testTopology =
+      TestTopologyFactory.createTopologyExtensionWithSchemaRegistry(this.app);
+
+  private static ConfiguredStreamsApp<TransactionJoiner> createApp() {
+    final StreamsTopicConfig topicConfig = StreamsTopicConfig.builder()
+        .inputTopics(List.of(INPUT_TOPIC))
+        .outputTopic(OUTPUT_TOPIC)
+        .build();
+    final AppConfiguration<StreamsTopicConfig> appConfig = new AppConfiguration<>(topicConfig);
+    return new ConfiguredStreamsApp<>(new TransactionJoiner(), appConfig);
   }
 
   @AfterEach
   void tearDown() {
-    if (this.topology != null) {
-      this.topology.stop();
-    }
+    this.app.close();
   }
 
   @Test
   void shouldJoinTransactions() {
-    this.start();
+    final Map<String, Transaction> transactions = TransactionBuilder.buildTestTransactionsMap();
 
-    Map<String, Transaction> transactions = TransactionBuilder.buildTestTransactionsMap();
-
-    for (Map.Entry<String, Transaction> entry : transactions.entrySet()) {
-      this.topology.input()
+    for (final Map.Entry<String, Transaction> entry : transactions.entrySet()) {
+      this.testTopology.input()
           .add(entry.getKey(), entry.getValue());
     }
 
-    final List<ProducerRecord<String, JoinedTransaction>> output = getOutput();
+    final List<ProducerRecord<String, JoinedTransaction>> output = this.testTopology
+        .streamOutput(this.app.getTopics().getOutputTopic())
+        .withValueType(JoinedTransaction.class)
+        .toList();
 
     assertThat(output)
         .anySatisfy(record ->
@@ -54,19 +57,5 @@ class TransactionJoinerTest {
                     .setTransaction2(transactions.get("X05"))
                     .build()
             ));
-  }
-
-  private void start() {
-    this.topology = new TestTopology<>(p -> {
-      this.transactionJoiner.setSchemaRegistryUrl(p.getProperty(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG));
-      return this.transactionJoiner.createTopology();
-    }, this.transactionJoiner.getKafkaProperties());
-    this.topology.start();
-  }
-
-  private List<ProducerRecord<String, JoinedTransaction>> getOutput() {
-    return Seq.seq(this.topology.streamOutput(this.transactionJoiner.getOutputTopic())
-        .withValueType(JoinedTransaction.class))
-        .toList();
   }
 }
