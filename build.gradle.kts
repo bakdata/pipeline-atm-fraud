@@ -48,7 +48,7 @@ tasks {
 dependencies {
     val streamsBootstrapVersion = "3.1.0"
     implementation(group = "com.bakdata.kafka", name = "streams-bootstrap-cli", version = streamsBootstrapVersion)
-    val confluentVersion = "7.7.1"
+    val confluentVersion = "7.6.0"
     implementation(group = "io.confluent", name = "kafka-streams-avro-serde", version = confluentVersion)
     val log4jVersion = "2.24.2"
     implementation(group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl", version = log4jVersion)
