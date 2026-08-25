@@ -2,6 +2,7 @@ package com.bakdata.kafka;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -39,7 +40,8 @@ public class AccountProducer extends KafkaProducerApplication {
 
     public static List<Account> loadJSON(final String fileName) {
         final ClassLoader classLoader = AccountProducer.class.getClassLoader();
-        final ObjectMapper objectMapper = new ObjectMapper();
+        final ObjectMapper objectMapper = new ObjectMapper()
+                .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
         try (final InputStream inputStream = classLoader.getResourceAsStream(fileName)) {
             return objectMapper.readValue(inputStream, new TypeReference<>() {});
         } catch (final IOException e) {

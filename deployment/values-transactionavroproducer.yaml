@@ -2,7 +2,7 @@ nameOverride: atm-fraud-transactionavroproducer
 
 replicaCount: 1
 
-image: url-to-container-registry.com/streams-explorer-demo-transactionavroproducer
+image: bakdata/atm-demo-transactionavroproducer
 imageTag: latest
 
 streams:

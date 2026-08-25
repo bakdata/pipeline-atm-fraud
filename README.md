@@ -13,11 +13,11 @@
 ### Build containers using jib
 
 ```shell
-gradle jib -Djib.to.image=url-to-container-registry.com/streams-explorer-demo-transactionavroproducer -Djib.container.mainClass=com.bakdata.kafka.TransactionAvroProducer
-gradle jib -Djib.to.image=url-to-container-registry.com/streams-explorer-demo-accountproducer -Djib.container.mainClass=com.bakdata.kafka.AccountProducer
-gradle jib -Djib.to.image=url-to-container-registry.com/streams-explorer-demo-transactionjoiner -Djib.container.mainClass=com.bakdata.kafka.TransactionJoiner
-gradle jib -Djib.to.image=url-to-container-registry.com/streams-explorer-demo-frauddetector -Djib.container.mainClass=com.bakdata.kafka.FraudDetector
-gradle jib -Djib.to.image=url-to-container-registry.com/streams-explorer-demo-accountlinker -Djib.container.mainClass=com.bakdata.kafka.AccountLinker
+gradle jib -Djib.to.image=bakdata/atm-demo-transactionavroproducer -Djib.container.mainClass=com.bakdata.kafka.TransactionAvroProducer
+gradle jib -Djib.to.image=bakdata/atm-demo-accountproducer -Djib.container.mainClass=com.bakdata.kafka.AccountProducer
+gradle jib -Djib.to.image=bakdata/atm-demo-transactionjoiner -Djib.container.mainClass=com.bakdata.kafka.TransactionJoiner
+gradle jib -Djib.to.image=bakdata/atm-demo-frauddetector -Djib.container.mainClass=com.bakdata.kafka.FraudDetector
+gradle jib -Djib.to.image=bakdata/atm-demo-accountlinker -Djib.container.mainClass=com.bakdata.kafka.AccountLinker
 ```
 
 ### Deploy in Kubernetes
@@ -25,11 +25,11 @@ gradle jib -Djib.to.image=url-to-container-registry.com/streams-explorer-demo-ac
 ```shell
 helm repo add bakdata-common https://raw.githubusercontent.com/bakdata/streams-bootstrap/master/charts/
 helm repo update
-helm upgrade --debug --install --force --values values-transactionavroproducer.yaml demo-transactionavroproducer bakdata-common/streams-app
-helm upgrade --debug --install --force --values values-accountproducer.yaml demo-accountproducer bakdata-common/streams-app
-helm upgrade --debug --install --force --values values-transactionjoiner.yaml demo-transactionjoiner bakdata-common/streams-app
-helm upgrade --debug --install --force --values values-frauddetector.yaml demo-frauddetector bakdata-common/streams-app
-helm upgrade --debug --install --force --values values-accountlinker.yaml demo-accountlinker bakdata-common/streams-app
+helm upgrade --debug --install --force --values deployment/values-transactionavroproducer.yaml demo-transactionavroproducer bakdata-common/streams-app
+helm upgrade --debug --install --force --values deployment/values-accountproducer.yaml demo-accountproducer bakdata-common/streams-app
+helm upgrade --debug --install --force --values deployment/values-transactionjoiner.yaml demo-transactionjoiner bakdata-common/streams-app
+helm upgrade --debug --install --force --values deployment/values-frauddetector.yaml demo-frauddetector bakdata-common/streams-app
+helm upgrade --debug --install --force --values deployment/values-accountlinker.yaml demo-accountlinker bakdata-common/streams-app
 ```
 
 ### Generate test accounts

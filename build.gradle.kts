@@ -2,27 +2,47 @@ description = "ATM fraud detection with Common Kafka Streams"
 plugins {
     java
     idea
-    id("io.freefair.lombok") version "6.5.1"
-    id("com.google.cloud.tools.jib") version "3.1.1"
-    id("com.github.davidmc24.gradle.plugin.avro") version "1.2.0"
+    id("com.bakdata.release") version "1.7.1"
+    id("com.bakdata.sonar") version "1.7.1"
+    id("com.bakdata.sonatype") version "1.7.1"
+    id("com.bakdata.jib") version "1.7.1"
+    id("io.freefair.lombok") version "8.11"
+    id("com.github.davidmc24.gradle.plugin.avro") version "1.9.0"
 }
 
 group = "com.bakdata.kafka"
-
-tasks.withType<Test> {
-    maxParallelForks = 1
-    useJUnitPlatform()
-}
 
 repositories {
     mavenCentral()
     maven(url = "https://packages.confluent.io/maven/")
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
-configure<JavaPluginConvention> {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+configure<com.bakdata.gradle.SonatypeSettings> {
+    developers {
+        developer {
+            name.set("Salomon Popp")
+            id.set("disrupted")
+        }
+    }
+}
+
+tasks {
+    compileJava {
+        options.encoding = "UTF-8"
+    }
+    compileTestJava {
+        options.encoding = "UTF-8"
+    }
+    test {
+        maxParallelForks = 1
+        useJUnitPlatform()
+    }
 }
 
 dependencies {
@@ -44,9 +64,9 @@ dependencies {
     val kafkaVersion: String by project
     val fluentKafkaVersion = "2.7.0"
     testImplementation(
-            group = "com.bakdata.fluent-kafka-streams-tests",
-            name = "fluent-kafka-streams-tests-junit5",
-            version = fluentKafkaVersion
+        group = "com.bakdata.fluent-kafka-streams-tests",
+        name = "fluent-kafka-streams-tests-junit5",
+        version = fluentKafkaVersion
     )
     testImplementation(group = "net.mguenther.kafka", name = "kafka-junit", version = kafkaVersion) {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
@@ -58,5 +78,23 @@ dependencies {
         version = fluentKafkaVersion
     )
     implementation(group = "info.picocli", name = "picocli", version = "4.6.1")
+}
 
+jibImage {
+    name.set(providers.systemProperty("jib.container.mainClass").map { mainClass ->
+        when (mainClass) {
+            "com.bakdata.kafka.TransactionAvroProducer" -> "atm-demo-transactionavroproducer"
+            "com.bakdata.kafka.AccountProducer" -> "atm-demo-accountproducer"
+            "com.bakdata.kafka.TransactionJoiner" -> "atm-demo-transactionjoiner"
+            "com.bakdata.kafka.FraudDetector" -> "atm-demo-frauddetector"
+            "com.bakdata.kafka.AccountLinker" -> "atm-demo-accountlinker"
+            else -> project.name
+        }
+    }.orElse(project.name))
+}
+
+jib {
+    from {
+        image = "eclipse-temurin:21.0.5_11-jre"
+    }
 }

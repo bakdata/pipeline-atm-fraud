@@ -2,7 +2,7 @@ nameOverride: atm-fraud-frauddetector
 
 replicaCount: 1
 
-image: url-to-container-registry.com/streams-explorer-demo-frauddetector
+image: bakdata/atm-demo-frauddetector
 imageTag: latest
 
 streams:
