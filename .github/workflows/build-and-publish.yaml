@@ -42,19 +42,14 @@ jobs:
       matrix:
         app:
           - name: transaction-avro-producer
-            image: bakdata/atm-demo-transactionavroproducer
             class: com.bakdata.kafka.TransactionAvroProducer
           - name: account-producer
-            image: bakdata/atm-demo-accountproducer
             class: com.bakdata.kafka.AccountProducer
           - name: transaction-joiner
-            image: bakdata/atm-demo-transactionjoiner
             class: com.bakdata.kafka.TransactionJoiner
           - name: fraud-detector
-            image: bakdata/atm-demo-frauddetector
             class: com.bakdata.kafka.FraudDetector
           - name: account-linker
-            image: bakdata/atm-demo-accountlinker
             class: com.bakdata.kafka.AccountLinker
 
     steps:
@@ -67,7 +62,7 @@ jobs:
       - name: Build and push ${{ matrix.app.name }} image
         uses: bakdata/ci-templates/actions/java-gradle-build-jib@1.82.1
         with:
-          repository: ${{ matrix.app.image }}
+          repository: "bakdata"
           class: ${{ matrix.app.class }}
           java-version: ${{ env.java-version }}
           gradle-version: ${{ env.gradle-version }}

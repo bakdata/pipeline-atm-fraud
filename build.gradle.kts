@@ -80,6 +80,19 @@ dependencies {
     implementation(group = "info.picocli", name = "picocli", version = "4.6.1")
 }
 
+jibImage {
+    name.set(providers.systemProperty("jib.container.mainClass").map { mainClass ->
+        when (mainClass) {
+            "com.bakdata.kafka.TransactionAvroProducer" -> "atm-demo-transactionavroproducer"
+            "com.bakdata.kafka.AccountProducer" -> "atm-demo-accountproducer"
+            "com.bakdata.kafka.TransactionJoiner" -> "atm-demo-transactionjoiner"
+            "com.bakdata.kafka.FraudDetector" -> "atm-demo-frauddetector"
+            "com.bakdata.kafka.AccountLinker" -> "atm-demo-accountlinker"
+            else -> project.name
+        }
+    }.orElse(project.name))
+}
+
 jib {
     from {
         image = "eclipse-temurin:21.0.5_11-jre"
