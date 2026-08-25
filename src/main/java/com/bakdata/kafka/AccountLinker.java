@@ -1,20 +1,21 @@
 package com.bakdata.kafka;
 
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.time.Duration;
-import java.util.Properties;
-import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.elasticsearch.common.geo.GeoDistance;
 import org.elasticsearch.common.unit.DistanceUnit;
 
-public class AccountLinker extends KafkaStreamsApplication {
+public class AccountLinker implements StreamsApp {
 
   public static void main(final String[] args) {
-    startApplication(new AccountLinker(), args);
+    KafkaApplication.startApplication(
+        new SimpleKafkaStreamsApplication<>(AccountLinker::new),
+        args
+    );
   }
 
   private static JoinedAccountTransaction join(final JoinedTransaction joinedTransaction, final Account account) {
@@ -57,12 +58,12 @@ public class AccountLinker extends KafkaStreamsApplication {
   }
 
   @Override
-  public void buildTopology(final StreamsBuilder builder) {
-    final KStream<String, JoinedTransaction> transactionsKStream = builder.stream(this.getInputTopics());
+  public void buildTopology(final TopologyBuilder builder) {
+    final KStream<String, JoinedTransaction> transactionsKStream = builder.streamInput();
     final KStream<String, JoinedTransaction> transactionsRekeyedKStream = transactionsKStream
         .map((k, v) -> KeyValue.pair(v.getTransaction1().getAccountId(), v));
 
-    final KStream<String, Account> accountsKStream = builder.stream(this.getInputTopic("accounts"));
+    final KStream<String, Account> accountsKStream = builder.streamInput("accounts");
     final KStream<String, Account> accountsRekeyedKStream = accountsKStream
         .map((k, v) -> KeyValue.pair(v.getAccountId(), v));
 
@@ -73,18 +74,16 @@ public class AccountLinker extends KafkaStreamsApplication {
     final KStream<String, JoinedAccountTransaction> joined = transactionsRekeyedKStream
         .join(accountsKTable, AccountLinker::join);
 
-    joined.to(this.getOutputTopic());
+    joined.to(builder.getTopics().getOutputTopic());
   }
 
   @Override
-  public String getUniqueAppId() {
-    return "streams-explorer-accountlinker-" + this.getOutputTopic();
+  public String getUniqueAppId(final StreamsTopicConfig topics) {
+    return "streams-explorer-accountlinker-" + topics.getOutputTopic();
   }
 
   @Override
-  protected Properties createKafkaProperties() {
-    final Properties kafkaProperties = super.createKafkaProperties();
-    kafkaProperties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.StringSerde.class);
-    return kafkaProperties;
+  public SerdeConfig defaultSerializationConfig() {
+    return new SerdeConfig(StringSerde.class, SpecificAvroSerde.class);
   }
 }

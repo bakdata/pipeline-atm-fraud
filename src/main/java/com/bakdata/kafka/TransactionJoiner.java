@@ -1,23 +1,24 @@
 package com.bakdata.kafka;
 
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.time.Duration;
-import java.util.Properties;
-import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.JoinWindows;
 import org.apache.kafka.streams.kstream.KStream;
 
-public class TransactionJoiner extends KafkaStreamsApplication {
+public class TransactionJoiner implements StreamsApp {
 
     public static void main(final String[] args) {
-        startApplication(new com.bakdata.kafka.TransactionJoiner(), args);
+        KafkaApplication.startApplication(
+                new SimpleKafkaStreamsApplication<>(TransactionJoiner::new),
+                args
+        );
     }
 
     @Override
-    public void buildTopology(final StreamsBuilder builder) {
-        final KStream<String, Transaction> input = builder.stream(this.getInputTopics());
+    public void buildTopology(final TopologyBuilder builder) {
+        final KStream<String, Transaction> input = builder.streamInput();
         final KStream<String, Transaction> mapped = input
                 .map((k, v) -> KeyValue.pair(v.getAccountId(), v));
 
@@ -28,20 +29,18 @@ public class TransactionJoiner extends KafkaStreamsApplication {
                                 .setTransaction1(t1)
                                 .setTransaction2(t2)
                                 .build(),
-                        JoinWindows.of(Duration.ofMinutes(10)).before(Duration.ZERO));
+                        JoinWindows.ofTimeDifferenceWithNoGrace(Duration.ofMinutes(10)).before(Duration.ZERO));
 
-        joined.to(this.getOutputTopic());
+        joined.to(builder.getTopics().getOutputTopic());
     }
 
     @Override
-    public String getUniqueAppId() {
-        return "streams-explorer-transactionjoiner-" + this.getOutputTopic();
+    public String getUniqueAppId(final StreamsTopicConfig topics) {
+        return "streams-explorer-transactionjoiner-" + topics.getOutputTopic();
     }
 
     @Override
-    protected Properties createKafkaProperties() {
-        final Properties kafkaProperties = super.createKafkaProperties();
-        kafkaProperties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.StringSerde.class);
-        return kafkaProperties;
+    public SerdeConfig defaultSerializationConfig() {
+        return new SerdeConfig(StringSerde.class, SpecificAvroSerde.class);
     }
 }

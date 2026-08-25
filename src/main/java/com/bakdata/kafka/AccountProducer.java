@@ -3,39 +3,45 @@ package com.bakdata.kafka;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerializer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Properties;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 
 @Slf4j
 @Setter
-public class AccountProducer extends KafkaProducerApplication {
+public class AccountProducer implements ProducerApp {
     private static final String FILE_NAME = "accounts.json";
+
     public static void main(final String[] args) {
-        startApplication(new AccountProducer(), args);
+        KafkaApplication.startApplication(
+                new SimpleKafkaProducerApplication<>(AccountProducer::new),
+                args
+        );
     }
 
     @Override
-    protected void runApplication() {
-        final List<Account> accounts = loadJSON(FILE_NAME);
-        final KafkaProducer<String, Account> producer = this.createProducer();
-        for (final Account accountObj : accounts) {
-            this.publishAccount(producer, accountObj);
-        }
+    public ProducerRunnable buildRunnable(final ProducerBuilder producerBuilder) {
+        return () -> {
+            final List<Account> accounts = loadJSON(FILE_NAME);
+            try (final Producer<String, Account> producer = producerBuilder.createProducer()) {
+                final String outputTopic = producerBuilder.getTopics().getOutputTopic();
+                for (final Account accountObj : accounts) {
+                    producer.send(new ProducerRecord<>(outputTopic, accountObj.getAccountId(), accountObj));
+                }
+                producer.flush();
+            }
+        };
     }
 
     @Override
-    protected Properties createKafkaProperties() {
-        final Properties kafkaProperties = super.createKafkaProperties();
-        kafkaProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        return kafkaProperties;
+    public SerializerConfig defaultSerializationConfig() {
+        return new SerializerConfig(StringSerializer.class, SpecificAvroSerializer.class);
     }
 
     public static List<Account> loadJSON(final String fileName) {
@@ -47,9 +53,5 @@ public class AccountProducer extends KafkaProducerApplication {
         } catch (final IOException e) {
             throw new RuntimeException("Error occurred while reading the JSON file.", e);
         }
-    }
-
-    private void publishAccount(final KafkaProducer<? super String, ? super Account> producer, final Account account) {
-        producer.send(new ProducerRecord<>(this.getOutputTopic(), account.getAccountId(), account));
     }
 }
