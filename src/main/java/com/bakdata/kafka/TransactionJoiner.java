@@ -1,42 +1,51 @@
 package com.bakdata.kafka;
 
+import com.bakdata.kafka.streams.KafkaStreamsApplication;
+import com.bakdata.kafka.streams.SerdeConfig;
+import com.bakdata.kafka.streams.SimpleKafkaStreamsApplication;
+import com.bakdata.kafka.streams.StreamsApp;
+import com.bakdata.kafka.streams.StreamsAppConfiguration;
+import com.bakdata.kafka.streams.kstream.KStreamX;
+import com.bakdata.kafka.streams.kstream.StreamsBuilderX;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.time.Duration;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
-import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.JoinWindows;
-import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.Repartitioned;
+import org.apache.kafka.streams.kstream.StreamJoined;
 
 public class TransactionJoiner implements StreamsApp {
 
     public static void main(final String[] args) {
-        KafkaApplication.startApplication(
-                new SimpleKafkaStreamsApplication<>(TransactionJoiner::new),
-                args
-        );
+        try (final KafkaStreamsApplication<TransactionJoiner> app = new SimpleKafkaStreamsApplication<>(
+                TransactionJoiner::new)) {
+            app.startApplication(args);
+        }
     }
 
     @Override
-    public void buildTopology(final TopologyBuilder builder) {
-        final KStream<String, Transaction> input = builder.streamInput();
-        final KStream<String, Transaction> mapped = input
-                .map((k, v) -> KeyValue.pair(v.getAccountId(), v));
+    public void buildTopology(final StreamsBuilderX builder) {
+        final KStreamX<String, Transaction> input = builder.streamInput();
+        final KStreamX<String, Transaction> mapped = input
+                .selectKey(Transaction::getAccountId)
+                .repartition(Repartitioned.as("accounts"));
 
-        final KStream<String, JoinedTransaction> joined = mapped
+        final KStreamX<String, JoinedTransaction> joined = mapped
                 .join(mapped,
                         (t1, t2) -> JoinedTransaction
                                 .newBuilder()
                                 .setTransaction1(t1)
                                 .setTransaction2(t2)
                                 .build(),
-                        JoinWindows.ofTimeDifferenceWithNoGrace(Duration.ofMinutes(10)).before(Duration.ZERO));
+                        JoinWindows.ofTimeDifferenceWithNoGrace(Duration.ofMinutes(10)).before(Duration.ZERO),
+                        StreamJoined.as("joined"));
 
-        joined.to(builder.getTopics().getOutputTopic());
+        joined.toOutputTopic();
     }
 
     @Override
-    public String getUniqueAppId(final StreamsTopicConfig topics) {
-        return "streams-explorer-transactionjoiner-" + topics.getOutputTopic();
+    public String getUniqueAppId(final StreamsAppConfiguration configuration) {
+        return "streams-explorer-transactionjoiner-" + configuration.getTopics().getOutputTopic();
     }
 
     @Override

@@ -3,27 +3,15 @@ name: Build and Publish
 on:
   push:
     tags: ["**"]
-    branches: ["**"]
-
-env:
-  java-version: 21
-  gradle-version: 8.4
-  gradle-cache: true
-  gradle-cache-read-only: true
-  gradle-refresh-dependencies: false
-  working-directory: "."
+    branches:
+      - main
+  pull_request:
+  merge_group:
 
 jobs:
   build-and-test:
     name: Build, Test and Assess code quality
     uses: bakdata/ci-templates/.github/workflows/java-gradle-base.yaml@1.82.1
-    with:
-      java-version: 21
-      gradle-version: 8.4
-      gradle-cache: true
-      gradle-cache-read-only: false
-      gradle-refresh-dependencies: false
-      working-directory: "."
     secrets:
       signing-key-id: ${{ secrets.SONATYPE_SIGNING_KEY_ID }}
       signing-password: ${{ secrets.SONATYPE_SIGNING_PASSWORD }}
@@ -34,9 +22,6 @@ jobs:
   build-jib:
     name: Build ${{ matrix.app.name }} image
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: ${{ env.working-directory }}
     needs: build-and-test
     strategy:
       matrix:
@@ -64,12 +49,6 @@ jobs:
         with:
           repository: "bakdata"
           class: ${{ matrix.app.class }}
-          java-version: ${{ env.java-version }}
-          gradle-version: ${{ env.gradle-version }}
-          gradle-cache: ${{ env.gradle-cache }}
-          gradle-cache-read-only: ${{ env.gradle-cache-read-only }}
-          gradle-refresh-dependencies: ${{ env.gradle-refresh-dependencies }}
-          working-directory: ${{ env.working-directory }}
 
   release:
     name: Create Github release

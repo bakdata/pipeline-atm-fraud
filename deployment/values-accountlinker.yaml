@@ -1,5 +1,3 @@
-nameOverride: atm-fraud-accountlinker
-
 replicaCount: 1
 
 image: bakdata/atm-demo-accountlinker
@@ -15,10 +13,4 @@ kafka:
       - atm-fraud-accounts-topic
   outputTopic: atm-fraud-output-topic
   errorTopic: atm-fraud-accountlinker-error-topic
-
-annotations:
-  consumerGroup: "streams-explorer-accountlinker-atm-fraud-output-topic"
-
-prometheus:
-  jmx:
-    enabled: false
+  applicationId: "streams-explorer-accountlinker-atm-fraud-output-topic"

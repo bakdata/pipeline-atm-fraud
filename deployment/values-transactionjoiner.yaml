@@ -1,5 +1,3 @@
-nameOverride: atm-fraud-transactionjoiner
-
 replicaCount: 1
 
 image: bakdata/atm-demo-transactionjoiner
@@ -12,10 +10,4 @@ kafka:
     - atm-fraud-incoming-transactions-topic
   outputTopic: atm-fraud-joinedtransactions-topic
   errorTopic: atm-fraud-transactionjoiner-error-topic
-
-annotations:
-  consumerGroup: "streams-explorer-transactionjoiner-atm-fraud-joinedtransactions-topic"
-
-prometheus:
-  jmx:
-    enabled: false
+  applicationId: "streams-explorer-transactionjoiner-atm-fraud-joinedtransactions-topic"

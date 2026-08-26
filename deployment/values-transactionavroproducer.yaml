@@ -1,5 +1,3 @@
-nameOverride: atm-fraud-transactionavroproducer
-
 replicaCount: 1
 
 image: bakdata/atm-demo-transactionavroproducer
@@ -13,7 +11,3 @@ kafka:
 commandLine:
   REAL_TX: 19
   ITERATION: 20
-
-prometheus:
-  jmx:
-    enabled: false

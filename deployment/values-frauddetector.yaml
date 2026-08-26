@@ -1,5 +1,3 @@
-nameOverride: atm-fraud-frauddetector
-
 replicaCount: 1
 
 image: bakdata/atm-demo-frauddetector
@@ -12,10 +10,4 @@ kafka:
     - atm-fraud-joinedtransactions-topic
   outputTopic: atm-fraud-possiblefraudtransactions-topic
   errorTopic: atm-fraud-frauddetector-error-topic
-
-annotations:
-  consumerGroup: "streams-explorer-frauddetector-atm-fraud-possiblefraudtransactions-topic"
-
-prometheus:
-  jmx:
-    enabled: false
+  applicationId: "streams-explorer-frauddetector-atm-fraud-possiblefraudtransactions-topic"
