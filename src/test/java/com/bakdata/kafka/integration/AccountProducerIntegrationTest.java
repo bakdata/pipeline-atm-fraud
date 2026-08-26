@@ -1,63 +1,56 @@
 package com.bakdata.kafka.integration;
 
-import static net.mguenther.kafka.junit.EmbeddedKafkaCluster.provisionWith;
-import static net.mguenther.kafka.junit.EmbeddedKafkaClusterConfig.defaultClusterConfig;
-import static net.mguenther.kafka.junit.Wait.delay;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.bakdata.kafka.Account;
 import com.bakdata.kafka.AccountProducer;
-import com.bakdata.kafka.KafkaProducerApplication;
-import com.bakdata.kafka.SimpleKafkaProducerApplication;
-import com.bakdata.schemaregistrymock.junit5.SchemaRegistryMockExtension;
-import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
+import com.bakdata.kafka.KafkaTestClient;
+import com.bakdata.kafka.TestApplicationRunner;
+import com.bakdata.kafka.producer.KafkaProducerApplication;
+import com.bakdata.kafka.producer.SimpleKafkaProducerApplication;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroDeserializer;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import net.mguenther.kafka.junit.EmbeddedKafkaCluster;
-import net.mguenther.kafka.junit.ReadKeyValues;
-import net.mguenther.kafka.junit.TopicConfig;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
+import java.time.Duration;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.apache.kafka.common.utils.AppInfoParser;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.kafka.KafkaContainer;
+import org.testcontainers.utility.DockerImageName;
 
+@Testcontainers
 class AccountProducerIntegrationTest {
-    private static final int TIMEOUT_SECONDS = 10;
-    @RegisterExtension
-    final SchemaRegistryMockExtension schemaRegistryMockExtension = new SchemaRegistryMockExtension();
-    private final EmbeddedKafkaCluster kafkaCluster = provisionWith(defaultClusterConfig());
-
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(10L);
     private static final String OUTPUT_TOPIC = "atm-fraud-accounts-topic";
+    @Container
+    private final KafkaContainer kafkaCluster = new KafkaContainer(DockerImageName.parse("apache/kafka")
+            .withTag(AppInfoParser.getVersion()));
 
-    @BeforeEach
-    void setup() {
-        this.kafkaCluster.start();
-    }
-
-    @AfterEach
-    void teardown() {
-        this.kafkaCluster.stop();
+    private static KafkaProducerApplication<AccountProducer> setupApp() {
+        final KafkaProducerApplication<AccountProducer> producerApp =
+                new SimpleKafkaProducerApplication<>(AccountProducer::new);
+        producerApp.setOutputTopic(OUTPUT_TOPIC);
+        return producerApp;
     }
 
     @Test
-    void shouldRunApp() throws InterruptedException {
-        this.kafkaCluster.createTopic(TopicConfig.withName(OUTPUT_TOPIC).useDefaults());
-        try (final KafkaProducerApplication<AccountProducer> accountProducer = this.setupApp()) {
+    void shouldRunApp() {
+        try (final KafkaProducerApplication<AccountProducer> accountProducer = setupApp()) {
+            final TestApplicationRunner runner = TestApplicationRunner.create(this.kafkaCluster.getBootstrapServers())
+                    .withSchemaRegistry()
+                    .withSessionTimeout(Duration.ofSeconds(10L));
+            final KafkaTestClient testClient = runner.newTestClient();
+            testClient.createTopic(OUTPUT_TOPIC);
+            runner.configure(accountProducer);
             accountProducer.run();
-            delay(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            assertThat(this.kafkaCluster.read(ReadKeyValues.from(OUTPUT_TOPIC, String.class, Account.class)
-                    .with(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class)
-                    .with(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, SpecificAvroDeserializer.class)
-                    .with(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG,
-                            this.schemaRegistryMockExtension.getUrl())
-                    .build()))
+            assertThat(testClient.read()
+                    .withKeyDeserializer(new StringDeserializer())
+                    .withValueDeserializer(new SpecificAvroDeserializer<Account>())
+                    .from(OUTPUT_TOPIC, POLL_TIMEOUT))
                     .hasSize(999)
                     .allSatisfy(keyValue -> {
-                        final String recordKey = keyValue.getKey();
-                        final Account account = keyValue.getValue();
+                        final String recordKey = keyValue.key();
+                        final Account account = keyValue.value();
                         final String accountId = account.getAccountId();
                         final String regex = "^a([0-9]{1,3})";
 
@@ -65,15 +58,5 @@ class AccountProducerIntegrationTest {
                         assertThat(recordKey).isEqualTo(accountId);
                     });
         }
-    }
-
-    private KafkaProducerApplication<AccountProducer> setupApp() {
-        final SimpleKafkaProducerApplication<AccountProducer> producerApp =
-                new SimpleKafkaProducerApplication<>(AccountProducer::new);
-        producerApp.setBootstrapServers(this.kafkaCluster.getBrokerList());
-        producerApp.setSchemaRegistryUrl(this.schemaRegistryMockExtension.getUrl());
-        producerApp.setOutputTopic(OUTPUT_TOPIC);
-        producerApp.setKafkaConfig(Map.of(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "10000"));
-        return producerApp;
     }
 }

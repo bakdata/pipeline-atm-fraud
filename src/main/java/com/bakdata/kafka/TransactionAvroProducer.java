@@ -1,5 +1,10 @@
 package com.bakdata.kafka;
 
+import com.bakdata.kafka.producer.KafkaProducerApplication;
+import com.bakdata.kafka.producer.ProducerApp;
+import com.bakdata.kafka.producer.ProducerBuilder;
+import com.bakdata.kafka.producer.ProducerRunnable;
+import com.bakdata.kafka.producer.SerializerConfig;
 import com.opencsv.CSVReader;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
@@ -23,8 +28,6 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import picocli.CommandLine;
 
 @Slf4j
-@Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,41 +42,9 @@ public class TransactionAvroProducer implements ProducerApp {
     private int iterations = 1;
 
     public static void main(final String[] args) {
-        KafkaApplication.startApplication(new TransactionAvroProducerApplication(), args);
-    }
-
-    @Override
-    public ProducerRunnable buildRunnable(final ProducerBuilder producerBuilder) {
-        return () -> {
-            final TransactionFactory transactionFactory = new TransactionFactory(loadCsvData(FILE_NAME));
-            try (final Producer<String, Transaction> producer = producerBuilder.createProducer()) {
-                final String outputTopic = producerBuilder.getTopics().getOutputTopic();
-                log.debug("Bound = {} and Iteration= {}", this.bound, this.iterations);
-                log.debug("Expected amount of transactions: {}", (this.bound + 1) * this.iterations);
-                log.info("Producing data into output topic <{}>...", outputTopic);
-                for (int counter = 0; counter < this.iterations; counter++) {
-                    final int fraudIndex = counter % this.bound;
-                    Transaction oldTransaction = new Transaction();
-
-                    for (int i = 0; i < this.bound; i++) {
-                        final Transaction newRealTransaction = transactionFactory.createRealTimeTransaction();
-                        producer.send(new ProducerRecord<>(outputTopic, newRealTransaction.getTransactionId(), newRealTransaction));
-                        if (i == fraudIndex) {
-                            oldTransaction = newRealTransaction;
-                        }
-                    }
-                    final Transaction fraudTransaction = transactionFactory.createFraudTransaction(oldTransaction, fraudIndex);
-                    producer.send(new ProducerRecord<>(outputTopic, fraudTransaction.getTransactionId(), fraudTransaction));
-                    log.debug("Current iteration step: {}", counter);
-                }
-                producer.flush();
-            }
-        };
-    }
-
-    @Override
-    public SerializerConfig defaultSerializationConfig() {
-        return new SerializerConfig(StringSerializer.class, SpecificAvroSerializer.class);
+        try (final KafkaProducerApplication<TransactionAvroProducer> app = new TransactionAvroProducerApplication()) {
+            app.startApplication(args);
+        }
     }
 
     public static List<AtmLocation> loadCsvData(final String fileName) {
@@ -96,6 +67,43 @@ public class TransactionAvroProducer implements ProducerApp {
         }
     }
 
+    @Override
+    public ProducerRunnable buildRunnable(final ProducerBuilder producerBuilder) {
+        return () -> {
+            final TransactionFactory transactionFactory = new TransactionFactory(loadCsvData(FILE_NAME));
+            try (final Producer<String, Transaction> producer = producerBuilder.createProducer()) {
+                final String outputTopic = producerBuilder.getTopics().getOutputTopic();
+                log.debug("Bound = {} and Iteration= {}", this.bound, this.iterations);
+                log.debug("Expected amount of transactions: {}", (this.bound + 1) * this.iterations);
+                log.info("Producing data into output topic <{}>...", outputTopic);
+                for (int counter = 0; counter < this.iterations; counter++) {
+                    final int fraudIndex = counter % this.bound;
+                    Transaction oldTransaction = new Transaction();
+
+                    for (int i = 0; i < this.bound; i++) {
+                        final Transaction newRealTransaction = transactionFactory.createRealTimeTransaction();
+                        producer.send(new ProducerRecord<>(outputTopic, newRealTransaction.getTransactionId(),
+                                newRealTransaction));
+                        if (i == fraudIndex) {
+                            oldTransaction = newRealTransaction;
+                        }
+                    }
+                    final Transaction fraudTransaction =
+                            transactionFactory.createFraudTransaction(oldTransaction, fraudIndex);
+                    producer.send(
+                            new ProducerRecord<>(outputTopic, fraudTransaction.getTransactionId(), fraudTransaction));
+                    log.debug("Current iteration step: {}", counter);
+                }
+                producer.flush();
+            }
+        };
+    }
+
+    @Override
+    public SerializerConfig defaultSerializationConfig() {
+        return new SerializerConfig(StringSerializer.class, SpecificAvroSerializer.class);
+    }
+
     @ToString(callSuper = true)
     @Getter
     @Setter
@@ -110,7 +118,7 @@ public class TransactionAvroProducer implements ProducerApp {
 
         @Override
         public TransactionAvroProducer createApp() {
-            return TransactionAvroProducer.builder()
+            return builder()
                     .bound(this.bound)
                     .iterations(this.iterations)
                     .build();

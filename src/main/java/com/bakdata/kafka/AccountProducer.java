@@ -1,28 +1,44 @@
 package com.bakdata.kafka;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.bakdata.kafka.producer.KafkaProducerApplication;
+import com.bakdata.kafka.producer.ProducerApp;
+import com.bakdata.kafka.producer.ProducerBuilder;
+import com.bakdata.kafka.producer.ProducerRunnable;
+import com.bakdata.kafka.producer.SerializerConfig;
+import com.bakdata.kafka.producer.SimpleKafkaProducerApplication;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerializer;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.List;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.json.JsonMapper;
 
-@Slf4j
-@Setter
 public class AccountProducer implements ProducerApp {
     private static final String FILE_NAME = "accounts.json";
 
     public static void main(final String[] args) {
-        KafkaApplication.startApplication(
-                new SimpleKafkaProducerApplication<>(AccountProducer::new),
-                args
-        );
+        try (final KafkaProducerApplication<AccountProducer> app = new SimpleKafkaProducerApplication<>(
+                AccountProducer::new)) {
+            app.startApplication(args);
+        }
+    }
+
+    public static List<Account> loadJSON(final String fileName) {
+        final ClassLoader classLoader = AccountProducer.class.getClassLoader();
+        final ObjectMapper objectMapper = JsonMapper.builder()
+                .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+                .build();
+        try (final InputStream inputStream = classLoader.getResourceAsStream(fileName)) {
+            return objectMapper.readValue(inputStream, new TypeReference<>() {});
+        } catch (final IOException e) {
+            throw new UncheckedIOException("Error occurred while reading the JSON file.", e);
+        }
     }
 
     @Override
@@ -34,7 +50,6 @@ public class AccountProducer implements ProducerApp {
                 for (final Account accountObj : accounts) {
                     producer.send(new ProducerRecord<>(outputTopic, accountObj.getAccountId(), accountObj));
                 }
-                producer.flush();
             }
         };
     }
@@ -42,16 +57,5 @@ public class AccountProducer implements ProducerApp {
     @Override
     public SerializerConfig defaultSerializationConfig() {
         return new SerializerConfig(StringSerializer.class, SpecificAvroSerializer.class);
-    }
-
-    public static List<Account> loadJSON(final String fileName) {
-        final ClassLoader classLoader = AccountProducer.class.getClassLoader();
-        final ObjectMapper objectMapper = new ObjectMapper()
-                .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
-        try (final InputStream inputStream = classLoader.getResourceAsStream(fileName)) {
-            return objectMapper.readValue(inputStream, new TypeReference<>() {});
-        } catch (final IOException e) {
-            throw new RuntimeException("Error occurred while reading the JSON file.", e);
-        }
     }
 }

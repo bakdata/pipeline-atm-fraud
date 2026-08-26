@@ -1,5 +1,3 @@
-nameOverride: atm-fraud-accountsproducer
-
 replicaCount: 1
 
 image: bakdata/atm-demo-accountproducer
@@ -9,7 +7,3 @@ kafka:
   bootstrapServers: "kafka://my-confluent-cp-kafka-headless:9092"
   schemaRegistryUrl: "http://my-confluent-cp-schema-registry:8081"
   outputTopic: atm-fraud-accounts-topic
-
-prometheus:
-  jmx:
-    enabled: false
