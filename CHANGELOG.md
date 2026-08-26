@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0](https://github.com/bakdata/pipeline-atm-fraud/tree/2.0.0) - 2026-08-26
+### What's changed
+
+* refactor: Modernize project by @philipp94831 in [#8](https://github.com/bakdata/pipeline-atm-fraud/pull/8)
+
+
+### New Contributors
+* @philipp94831 made their first contribution in [#8](https://github.com/bakdata/pipeline-atm-fraud/pull/8)
+
+**Full Changelog**: https://github.com/bakdata/pipeline-atm-fraud/compare/1.1.0...2.0.0
+
 ## [1.1.0](https://github.com/bakdata/pipeline-atm-fraud/tree/1.1.0) - 2026-08-25
 ### What's changed
 
@@ -15,6 +26,7 @@ All notable changes to this project will be documented in this file.
 
 
 ### New Contributors
+* @bakdata-bot made their first contribution
 * @disrupted made their first contribution in [#6](https://github.com/bakdata/pipeline-atm-fraud/pull/6)
 * @yannick-roeder made their first contribution
 
