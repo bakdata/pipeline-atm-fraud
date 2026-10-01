@@ -7,7 +7,7 @@ streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-
 streamsBootstrap-cli = { group = "com.bakdata.kafka", name = "streams-bootstrap-cli" }
 log4j-slf4j2 = { group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl", version = "2.26.1" }
 opencsv = { group = "com.opencsv", name = "opencsv", version = "5.12.0" }
-jackson-databind = { group = "tools.jackson.core", name = "jackson-databind", version = "3.2.2" }
+jackson-databind = { group = "tools.jackson.core", name = "jackson-databind", version = "3.2.3" }
 
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version = "6.1.3" }
