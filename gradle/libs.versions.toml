@@ -20,6 +20,6 @@ testcontainers-kafka = { group = "org.testcontainers", name = "testcontainers-ka
 release = { id = "com.bakdata.release", version = "2.2.1" }
 sonar = { id = "com.bakdata.sonar", version = "2.2.1" }
 sonatype = { id = "com.bakdata.sonatype", version = "2.2.1" }
-lombok = { id = "io.freefair.lombok", version = "9.5.0" }
+lombok = { id = "io.freefair.lombok", version = "9.7.0" }
 jib = { id = "com.bakdata.jib", version = "2.2.1" }
 avro = { id = "com.bakdata.gradle.avro", version = "2.0.1" }
