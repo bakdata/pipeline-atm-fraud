@@ -3,7 +3,7 @@ testcontainers = "2.0.5"
 
 [libraries]
 kafka-streams-avro-serde = { group = "io.confluent", name = "kafka-streams-avro-serde" }
-streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-bom", version = "7.5.0" }
+streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-bom", version = "7.5.1" }
 streamsBootstrap-cli = { group = "com.bakdata.kafka", name = "streams-bootstrap-cli" }
 log4j-slf4j2 = { group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl", version = "2.26.1" }
 opencsv = { group = "com.opencsv", name = "opencsv", version = "5.12.0" }
